@@ -297,8 +297,12 @@ static int hci_open(int rate, hcimode_t mode )
 		ALOGI("device sfd = %d open", cfg.sfd);
 		return 0;
 	}
-	
+
+#ifdef HW_TENDERLOIN
+	cfg.ufd = open(cfg.dev, O_RDWR | O_NOCTTY | O_NONBLOCK);
+#else
 	cfg.ufd = open(cfg.dev, O_RDWR | O_NOCTTY);
+#endif
 	if (cfg.ufd < 0) {
 		ALOGE("Can't open serial port %s: %s (%d)", cfg.dev, strerror(errno), errno);
 		return -1;
