@@ -2476,12 +2476,20 @@ int bcsp(void)
 	}
 
 	// Load the Bluetooth PSR file into the chip
-	csr_load_config();
+	if (csr_load_config() < 0) {
+		ALOGE("csr_load_config failed");
+		hci_close();
+		return -1;
+	}
 
     ALOGD("Rebooting device.... Should restart in UART BCSP @ %d,%c,%sflow", cfg.speed, (cfg.flags & EVEN_PARITY) ? 'E': 'N', (cfg.flags & FLOW_CTL) ? "" : "no" );   
    
     /* warm reboot */   
-    csr_reboot(1);   
+    if (csr_reboot(1) < 0) {
+		ALOGE("csr_reboot failed");
+		hci_close();
+		return -1;
+	}
 	hci_close();
 	
 	/* Give time to reboot ... */
