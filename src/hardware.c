@@ -1961,7 +1961,6 @@ static int str2val(char* s, int base)
 	while (*s) {
 		v = char2dig(*s++);
 		if (v >= base || v < 0) {
-			ALOGE("Invalid digit");
 			return -1;
 		}
 		res *= base;
@@ -1977,7 +1976,7 @@ static int csr_load_config(void)
 	int line = 1;
 	int v, pos = 0;
 	uint16_t pfkey = 0;
-	uint8_t val[64];
+	uint8_t val[256];
 	
 	int cf = open(cfg.psrfile, O_RDONLY);
 	if (cf < 0) {
@@ -2010,7 +2009,7 @@ static int csr_load_config(void)
 		// Convert to decimal
 		v = str2val(hexc,16);
 		if (v < 0) {
-			ALOGE("Error at config file line %d: hex constants must be 4 chars long",line);
+			ALOGE("Error at config file line %d: invalid hex char",line);
 			break;
 		}
 		pfkey = v;
@@ -2021,15 +2020,17 @@ static int csr_load_config(void)
 		
 			// Skip spaces between lines...
 			while (read(cf, &c, 1) == 1 && c != '\n' && !ishexdig(c));
-			if (!ishexdig(c)) {
-				if (c == '\n')
-					line++;
+
+			if (c == '\n') {
+				line++;
 				break;
 			}
-			
+
+			hexc[0] = c;
+
 			// Start of number. Process it
-			if (read(cf, &hexc, 4) != 4) {
-				ALOGE("Error at config file line %d: hex constants must be 4 chars long",line);
+			if (read(cf, &hexc[1], 3) != 3) {
+				ALOGE("Error at config file line %d, pos=%d: hex constants must be 4 chars long",line,pos);
 				break;
 			}
 			hexc[4] = 0;
@@ -2037,7 +2038,7 @@ static int csr_load_config(void)
 			// Convert to decimal
 			v = str2val(hexc,16);
 			if (v < 0) {
-				ALOGE("Error at config file line %d: hex constants must be 4 chars long",line);
+				ALOGE("Error at config file line %d, pos=%d: invalid hex char",line,pos);
 				break;
 			}
 			val[pos++] = v;
@@ -2057,7 +2058,7 @@ static int csr_load_config(void)
 					val[0] = vnd_local_bd_addr[3]; val[1] = 0;
 					val[3] = vnd_local_bd_addr[4];
 					val[2] = vnd_local_bd_addr[5];
-					v = 8;
+					pos = 8;
 				}
 				break;
 			case CSR_PSKEY_UART_BAUD_RATE:
@@ -2068,7 +2069,7 @@ static int csr_load_config(void)
 					
 					val[0] = divisor;
 					val[1] = divisor >> 8;
-					v = 2;
+					pos = 2;
 				}
 				break;
 			case CSR_PSKEY_UART_CONFIG:
@@ -2086,7 +2087,7 @@ static int csr_load_config(void)
 					}
 					val[0] = uart_conf;
 					val[1] = uart_conf >> 8;
-					v = 2;
+					pos = 2;
 				}
 				break;
 			case CSR_PSKEY_HOST_INTERFACE:
@@ -2097,7 +2098,7 @@ static int csr_load_config(void)
 					
 					val[0] = host_if;
 					val[1] = host_if >> 8;
-					v = 2;
+					pos = 2;
 				}
 				break;
 		}
@@ -2109,7 +2110,7 @@ static int csr_load_config(void)
 		}
 		
 		// Send the command!
-		if (csr_write_pfkey( CSR_PSKEY_HOSTIO_UART_PS_BLOCK, val, pos * 2)) {
+		if (csr_write_pfkey( pfkey, val, pos)) {
 			ALOGD("Failed to write config");
 			break;
 		}
