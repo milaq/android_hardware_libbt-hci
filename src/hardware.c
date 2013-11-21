@@ -750,8 +750,33 @@ static int set_bluetooth_power(int on)
     int rfd = -1;
     int ret = -1;
     char buffer = '0';
+#ifdef HW_TENDERLOIN
+	char hwpin[] = "/sys/user_hw/pins/bt/reset/level";
+#endif
 
 	buffer = on ? '1' : '0';
+
+#ifdef HW_TENDERLOIN
+    rfd = open(hwpin, O_WRONLY);
+    if (rfd < 0)
+    {
+        ALOGE("set_bluetooth_power : open(%s) for write failed: %s (%d)",
+            hwpin, strerror(errno), errno);
+        return ret;
+    }
+
+    sz = write(rfd, &buffer, 1);
+    if (sz < 0) {
+        ALOGE("set_bluetooth_power : write(%s) failed: %s (%d)",
+            hwpin, strerror(errno),errno);
+    }
+    else {
+        ret = 0;
+	}
+
+    if (rfd >= 0) close(rfd);
+	if (ret) return ret;
+#endif
 
     /* check if we have rfkill interface */
     if (cfg.rfkill_id == -1)
