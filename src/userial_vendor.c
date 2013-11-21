@@ -145,6 +145,12 @@ int userial_vendor_open(void)
         return -1;
     }
 
+    /* bring HCI device up */
+    if (ioctl(vnd_netlink.fd, HCIDEVUP, vnd_netlink.dev_id) < 0) {
+        ALOGE("Can't bring up device errno=%d", errno);
+        return -1;
+    }
+
     ALOGI("device fd = %d open", vnd_netlink.fd);
 
     return vnd_netlink.fd;
