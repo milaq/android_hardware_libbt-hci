@@ -44,6 +44,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef HW_TENDERLOIN
+#include <linux/hsuart.h>
+#endif
+
 #include "bt_hci_bdroid.h"
 #include "bt_vendor_hci.h"
 #include "bluetooth.h"
@@ -248,6 +252,9 @@ static int hci_open(int rate, hcimode_t mode )
 {
 	struct termios ti;
 	uint8_t delay, activity = 0x00;
+#ifdef HW_TENDERLOIN
+	struct hsuart_mode uart_mode;
+#endif
 	int timeout = 0;
 	int ld;
 
@@ -298,6 +305,7 @@ static int hci_open(int rate, hcimode_t mode )
 	}
 	ALOGI("Opened serial port %s", cfg.dev);
 
+#ifndef HW_TENDERLOIN
 	tcflush(cfg.ufd, TCIOFLUSH);
 
 	/* Restore TTY line discipline - Just in case ...*/
@@ -364,6 +372,23 @@ static int hci_open(int rate, hcimode_t mode )
 		cfg.ufd = -1;
 		return -1;
 	}
+#else
+	// HW_TENDERLOIN
+	if (rate == 38400) {
+		uart_mode.speed = 0x384000;
+	} else {
+		uart_mode.speed = 0x1C200;
+	}
+	uart_mode.flags = 0x9;
+	if (ioctl(cfg.ufd, HSUART_IOCTL_SET_UARTMODE, &uart_mode) < 0) {
+		ALOGE("Failed HSUART_IOCTL_SET_UARTMODE: %s (%d)",
+                 strerror(errno), errno);
+		close(cfg.ufd);
+		cfg.ufd = -1;
+		return -1;
+	}
+	usleep(100);
+#endif
 	
 	if (mode == omBCSP) {
 
