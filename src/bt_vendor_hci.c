@@ -197,7 +197,7 @@ static int op(bt_vendor_opcode_t opcode, void *param)
             break;
     }
 
-    return TRUE;
+    return retval;
 }
 
 /** Closes the interface */
