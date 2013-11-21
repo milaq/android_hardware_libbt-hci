@@ -2948,7 +2948,7 @@ static int init_uart(const struct uart_t* u)
 		return -1;
 	}
 
-	return 0;
+	return cfg.ufd;
 }   
 
 int hw_config(void)
