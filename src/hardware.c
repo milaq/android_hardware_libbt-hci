@@ -782,6 +782,7 @@ static int set_bluetooth_power(int on)
 	}
 
     if (rfd >= 0) close(rfd);
+	usleep(1000000);
 	if (ret) return ret;
 #endif
 
