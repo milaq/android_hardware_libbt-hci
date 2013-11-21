@@ -391,6 +391,8 @@ static int hci_open(int rate, hcimode_t mode )
 
 				if (timeout++ > 5000) {
 					ALOGE("Initialization timed out");
+					close(cfg.ufd);
+					cfg.ufd = -1;
 					return -1;
 				}
 			}
