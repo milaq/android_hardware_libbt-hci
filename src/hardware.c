@@ -2176,7 +2176,8 @@ static int csr_load_config(void)
 		// Send the command!
 		if (csr_write_pfkey( pfkey, val, pos)) {
 			ALOGD("Failed to write config");
-			break;
+			close(cf);
+			return -1;
 		}
 	};
 	
