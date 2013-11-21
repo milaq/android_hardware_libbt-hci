@@ -450,7 +450,9 @@ static int hci_set_speed(int speed)
 void put_uart(uint8_t ch)
 {
 	if (write(cfg.ufd, &ch, 1) < 0) {
-#ifndef HW_TENDERLOIN
+#ifdef HW_TENDERLOIN
+		usleep(1000);
+#else
 		ALOGE("UART write error");
 #endif
 	}
