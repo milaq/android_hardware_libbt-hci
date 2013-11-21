@@ -142,6 +142,7 @@ int userial_vendor_open(void)
     /* Set the socket to RAW */
     if (ioctl(vnd_netlink.fd, HCISETRAW, 1) < 0) {
         ALOGE("Can't access device");
+        return -1;
     }
 
     ALOGI("device fd = %d open", vnd_netlink.fd);
