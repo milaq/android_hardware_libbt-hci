@@ -172,6 +172,7 @@ typedef struct {
 	int  raw;
 	int  dev_id;
 	
+	int  sfd;
 	int  ufd;
 	uint16_t 	seqnum;
 	hcimode_t 	hci_mode;
@@ -260,8 +261,8 @@ static int hci_open(int rate, hcimode_t mode )
 		ALOGI("Opening hci%d", cfg.dev_id);
 
 		/* Create HCI socket */
-		cfg.ufd = socket(AF_BLUETOOTH, SOCK_RAW, BTPROTO_HCI);
-		if (cfg.ufd < 0) {
+		cfg.sfd = socket(AF_BLUETOOTH, SOCK_RAW, BTPROTO_HCI);
+		if (cfg.sfd < 0) {
 			ALOGE("Unable to open NETLINK socket");
 			return -1;
 		}
@@ -270,23 +271,23 @@ static int hci_open(int rate, hcimode_t mode )
 		memset(&a, 0, sizeof(a));
 		a.hci_family = AF_BLUETOOTH;
 		a.hci_dev = cfg.dev_id;
-		if (bind(cfg.ufd, (struct sockaddr *) &a, sizeof(a)) < 0) {
+		if (bind(cfg.sfd, (struct sockaddr *) &a, sizeof(a)) < 0) {
 			ALOGE("Unable to bind to open HCI%d device",cfg.dev_id);
-			close(cfg.ufd);
-			cfg.ufd = -1;
+			close(cfg.sfd);
+			cfg.sfd = -1;
 			return -1;
 		}
 		
 		/* Setup no filter */
 		memset(&flt, 0, sizeof(flt));
-		if (setsockopt(cfg.ufd, SOL_HCI, HCI_FILTER, &flt, sizeof(flt)) < 0) {
+		if (setsockopt(cfg.sfd, SOL_HCI, HCI_FILTER, &flt, sizeof(flt)) < 0) {
 			ALOGE("HCI filter setup failed");
-			close(cfg.ufd);
-			cfg.ufd = -1;
+			close(cfg.sfd);
+			cfg.sfd = -1;
 			return -1;
 		} 
 
-		ALOGI("device fd = %d open", cfg.ufd);
+		ALOGI("device sfd = %d open", cfg.sfd);
 		return 0;
 	}
 	
@@ -295,9 +296,10 @@ static int hci_open(int rate, hcimode_t mode )
 		ALOGE("Can't open serial port %s: %s (%d)", cfg.dev, strerror(errno), errno);
 		return -1;
 	}
+	ALOGI("Opened serial port %s", cfg.dev);
 
 	tcflush(cfg.ufd, TCIOFLUSH);
-	
+
 	/* Restore TTY line discipline - Just in case ...*/
 	ld = N_TTY;
 	if (ioctl(cfg.ufd, TIOCSETD, &ld) < 0) {
@@ -2692,6 +2694,7 @@ void hw_init(void)
 	cfg.send_break = 0;
 	cfg.raw = 0;
 	cfg.ufd = -1;
+	cfg.sfd = -1;
 	cfg.seqnum = 0x0000;
 	cfg.hci_mode = omUnknown;
 	cfg.dev_id = 0;
