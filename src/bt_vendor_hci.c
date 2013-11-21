@@ -78,7 +78,7 @@ static int init(const bt_vendor_callbacks_t* p_cb, unsigned char *local_bdaddr)
 
     userial_vendor_init();
     upio_init();
-	hw_init();
+    hw_init();
 
     vnd_load_conf(VENDOR_LIB_CONF_FILE);
 
@@ -97,45 +97,57 @@ static int op(bt_vendor_opcode_t opcode, void *param)
 {
     int retval = 0;
 
-    BTVNDDBG("op for %d", opcode);
-
     switch(opcode) {
         case BT_VND_OP_POWER_CTRL:
             {
                 int *state = (int *) param;
-                if (*state == BT_VND_PWR_OFF)
+                if (*state == BT_VND_PWR_OFF) {
+                    BTVNDDBG("BT_VND_OP_POWER_CTRL OFF");
                     upio_set_bluetooth_power(UPIO_BT_POWER_OFF);
-                else if (*state == BT_VND_PWR_ON)
+                }
+                else if (*state == BT_VND_PWR_ON) {
+                    BTVNDDBG("BT_VND_OP_POWER_CTRL ON");
                     upio_set_bluetooth_power(UPIO_BT_POWER_ON);
+                } else {
+                    BTVNDDBG("BT_VND_OP_POWER_CTRL unknown=%d", *state);
+                }
             }
             break;
 
         case BT_VND_OP_FW_CFG:
-			if (bt_vendor_cbacks)
-			{
-				ALOGE("vendor lib fw conf done");
-				bt_vendor_cbacks->fwcfg_cb(BT_VND_OP_RESULT_SUCCESS);
-			} 
+            if (bt_vendor_cbacks)
+            {
+                BTVNDDBG("BT_VND_OP_FW_CFG");
+                bt_vendor_cbacks->fwcfg_cb(BT_VND_OP_RESULT_SUCCESS);
+            } else {
+                BTVNDDBG("BT_VND_OP_FW_CFG no-callbacks");
+            }
             break;
 
         case BT_VND_OP_SCO_CFG:
-			if (bt_vendor_cbacks)
-			{
-				ALOGE("vendor lib scocfg ok");
-				bt_vendor_cbacks->scocfg_cb(BT_VND_OP_RESULT_SUCCESS);
-			}
+            if (bt_vendor_cbacks)
+            {
+                BTVNDDBG("BT_VND_OP_FW_CFG");
+                bt_vendor_cbacks->scocfg_cb(BT_VND_OP_RESULT_SUCCESS);
+            } else {
+                BTVNDDBG("BT_VND_OP_FW_CFG no-callbacks");
+            }
             break;
 
         case BT_VND_OP_USERIAL_OPEN:
             {
                 int (*fd_array)[] = (int (*)[]) param;
                 int fd, idx;
-				
-				// Configure the hw and setup the HCI channel
-				if (hw_config() < 0)
-					return FALSE;
-				
-				// Open the HCI channel
+
+                BTVNDDBG("BT_VND_OP_USERIAL_OPEN");
+                // Configure the hw and setup the HCI channel
+                fd = hw_config();
+                if (fd < 0) {
+                    ALOGE("BT_VND_OP_USERIAL_OPEN hw_config failed");
+                    return FALSE;
+                }
+
+                // Open the HCI channel
                 fd = userial_vendor_open();
                 if (fd != -1)
                 {
@@ -143,6 +155,8 @@ static int op(bt_vendor_opcode_t opcode, void *param)
                         (*fd_array)[idx] = fd;
 
                     retval = 1;
+                } else {
+                    BTVNDDBG("BT_VND_OP_USERIAL_OPEN userial_vendor_open fd=-1");
                 }
                 /* retval contains numbers of open fd of HCI channels */
             }
@@ -150,13 +164,15 @@ static int op(bt_vendor_opcode_t opcode, void *param)
 
         case BT_VND_OP_USERIAL_CLOSE:
             {
+                BTVNDDBG("BT_VND_OP_USERIAL_CLOSE");
                 userial_vendor_close();
-				hw_close();
+                hw_close();
             }
             break;
 
         case BT_VND_OP_GET_LPM_IDLE_TIMEOUT:
             {
+                BTVNDDBG("BT_VND_OP_GET_LPM_IDLE_TIMEOUT");
                 uint32_t *timeout_ms = (uint32_t *) param;
                 *timeout_ms = 250;
             }
@@ -164,12 +180,20 @@ static int op(bt_vendor_opcode_t opcode, void *param)
 
         case BT_VND_OP_LPM_SET_MODE:
             {
-				if (bt_vendor_cbacks)
-					bt_vendor_cbacks->lpm_cb(BT_VND_OP_RESULT_SUCCESS);
+                if (bt_vendor_cbacks) {
+                    BTVNDDBG("BT_VND_OP_LPM_SET_MODE");
+                    bt_vendor_cbacks->lpm_cb(BT_VND_OP_RESULT_SUCCESS);
+                } else {
+                    BTVNDDBG("BT_VND_OP_LPM_SET_MODE no-callbacks");
+                }
             }
             break;
 
         case BT_VND_OP_LPM_WAKE_SET_STATE:
+            // BTVNDDBG("BT_VND_OP_LPM_WAKE_SET_STATE");
+            break;
+        default:
+            BTVNDDBG("UNSUPPORED OP=%d", opcode);
             break;
     }
 
