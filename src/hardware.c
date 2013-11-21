@@ -2115,6 +2115,7 @@ static int csr_load_config(void)
 					pos = 8;
 				}
 				break;
+#ifndef HW_TENDERLOIN
 			case CSR_PSKEY_UART_BAUD_RATE:
 				{
 					uint16_t divisor = (cfg.speed * 64 + 7812) / 15625;   
@@ -2155,6 +2156,7 @@ static int csr_load_config(void)
 					pos = 2;
 				}
 				break;
+#endif
 		}
 		
 		ALOGD("PFKEY = 0x%04x", pfkey);
@@ -2348,7 +2350,8 @@ int bcsp(void)
 
 	  
 	*/   
-	
+
+#ifndef HW_TENDERLOIN
     len = csr_read_pfkey( CSR_PSKEY_HOSTIO_UART_PS_BLOCK, buf);   
     if (len != 20) {
         ALOGE("CSR_PSKEY_HOST_INTERFACE"); 
@@ -2524,6 +2527,7 @@ int bcsp(void)
 	} else {
 		ALOGD("read:CSR_PSKEY_HOSTIO_BREAK_POLL_PERIOD:    %d ms", val32/1000);   
 	}
+#endif
 
 	// Load the Bluetooth PSR file into the chip
 	if (csr_load_config() < 0) {
@@ -2550,12 +2554,14 @@ int bcsp(void)
         ALOGE("Unable to open Bluetooth [2]");
 		return -1;
 	}
-   
+
+#ifndef HW_TENDERLOIN
    	/* Print bluetooth chipset info */
 	csr_print_rev();
 	
 	/* Setup bluecore6 chip (again, just in case warm reboot did something to our config */
 	csr_load_config();
+#endif
 	
 	ALOGD("Done");
    
@@ -2628,12 +2634,14 @@ static int csr(void)
                                                             buf[2]);   
 															
 
+#ifndef HW_TENDERLOIN
 	/* ---------------------------------------------------------------------------- */  
 	if (csr_read_pfkey_uint16( CSR_PSKEY_UART_BAUD_RATE, &divisor)) {
 		ALOGE("CSR_PSKEY_UART_BAUD_RATE");   
 	} else {
 		ALOGD("read:CSR_PSKEY_UART_BAUD_RATE:      %d (%d bps)", divisor, ((divisor * 15625) - 7812) / 64 );   
 	}
+#endif
 
 	divisor = (cfg.speed * 64 + 7812) / 15625;   
 	
