@@ -22,6 +22,7 @@ include $(CLEAR_VARS)
 
 BDROID_DIR:= external/bluetooth/bluedroid
 
+LOCAL_ADDITIONAL_DEPENDENCIES := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
 LOCAL_SRC_FILES := \
         src/bt_vendor_hci.c \
 		src/conf.c \
@@ -32,7 +33,8 @@ LOCAL_SRC_FILES := \
 
 LOCAL_C_INCLUDES += \
         $(LOCAL_PATH)/include \
-        $(BDROID_DIR)/hci/include
+        $(BDROID_DIR)/hci/include \
+        $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
 
 LOCAL_SHARED_LIBRARIES := \
         libcutils
